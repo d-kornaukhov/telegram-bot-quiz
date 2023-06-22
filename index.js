@@ -9,6 +9,8 @@ let currentIndex = 0
 let correctAnswers = 0
 let testInProgress = false
 let scores = 0
+let scoreUp = 5
+let scoreDown = 3
 
 const initializeTest = () => {
 	currentIndex = 0
@@ -29,27 +31,27 @@ const newQuestion = async msg => {
 	const question = getNextQuestion()
 	if (!question) {
 		testInProgress = false
-		let resultMessage
-		resultMessage = `Тест завершен! вы набрали ${scores} баллов. Введите команду /test или нажмите кнопку ниже, чтобы перепройти тест`
+		let resultMessage = `Тест завершен! Вы набрали ${scores} баллов. Введите команду /test или нажмите кнопку ниже, чтобы перепройти тест`
 
-		const startButton = [{ text: "/test" }]
 		const shareContactButton = [
-			{ text: "Поделится контактом", request_contact: true },
+			{ text: "Поделиться контактом", request_contact: true },
 		]
+
+		const retryButtonText = "Перепройти тест"
 		const options = {
 			reply_markup: {
-				keyboard: [startButton, shareContactButton],
+				keyboard: [[{ text: retryButtonText }], shareContactButton],
 				resize_keyboard: true,
-				one_time_keyboard: true,
 			},
 		}
+
 		await bot.sendMessage(msg.chat.id, resultMessage, options)
 
 		return
 	}
 
 	const text = question.text
-	const options = {
+	const questionButtons = {
 		reply_markup: {
 			keyboard: question.buttons,
 			resize_keyboard: true,
@@ -58,7 +60,7 @@ const newQuestion = async msg => {
 	}
 	const chat = msg.hasOwnProperty("chat") ? msg.chat.id : msg.from.id
 
-	await bot.sendMessage(chat, text, options)
+	await bot.sendMessage(chat, text, questionButtons)
 }
 
 bot.onText(/^$/, async msg => {
@@ -76,22 +78,11 @@ bot.onText(/^$/, async msg => {
 })
 
 bot.onText(/\/start/, async msg => {
-	const startButton = [{ text: "/test" }]
-	const options = {
-		reply_markup: {
-			keyboard: [startButton],
-			resize_keyboard: true,
-		},
-	}
-
-	await bot.sendMessage(
-		msg.chat.id,
-		'Нажмите кнопку "Начать тест", чтобы начать тест.',
-		options
-	)
+	await bot.sendMessage(msg.chat.id, "Введите команду /test что бы начать")
 })
 
 bot.onText(/\/test/, async msg => {
+	await bot.sendMessage(msg.chat.id, "Начинаем тест")
 	initializeTest()
 	await newQuestion(msg)
 })
@@ -104,9 +95,9 @@ bot.on("message", async msg => {
 
 	if (currentQuestion && selectedOption === currentQuestion.right_answer) {
 		correctAnswers++
-		scores += 5
+		scores += scoreUp
 	} else {
-		scores -= 3
+		scores -= scoreDown
 	}
 	if (scores < 0) scores = 0
 
@@ -123,12 +114,8 @@ const questions = [
 2️⃣  22\n
 3️⃣  4
         `,
-		buttons: [
-			[{ text: "Ответ 1" }],
-			[{ text: "Ответ 2" }],
-			[{ text: "Ответ 3" }],
-		],
-		right_answer: "Ответ 3",
+		buttons: [[{ text: "2" }], [{ text: "22" }], [{ text: "4" }]],
+		right_answer: "4",
 		id: 1,
 	},
 	{
@@ -142,12 +129,12 @@ const questions = [
 4️⃣  Венера
         `,
 		buttons: [
-			[{ text: "Ответ 1" }],
-			[{ text: "Ответ 2" }],
-			[{ text: "Ответ 3" }],
-			[{ text: "Ответ 4" }],
+			[{ text: "Юпитер" }],
+			[{ text: "Земля" }],
+			[{ text: "Меркурий" }],
+			[{ text: "Венера" }],
 		],
-		right_answer: "Ответ 2",
+		right_answer: "Земля",
 		id: 2,
 	},
 	{
@@ -161,12 +148,17 @@ const questions = [
 4️⃣  Рига
         `,
 		buttons: [
-			[{ text: "Ответ 1" }],
-			[{ text: "Ответ 2" }],
-			[{ text: "Ответ 3" }],
-			[{ text: "Ответ 4" }],
+			[{ text: "Ереван" }],
+			[{ text: "Тайбэй" }],
+			[{ text: "Токио" }],
+			[{ text: "Рига" }],
 		],
-		right_answer: "Ответ 3",
+		right_answer: "Токио",
 		id: 3,
 	},
 ]
+
+bot.onText(/Перепройти тест/, async msg => {
+	initializeTest()
+	await newQuestion(msg)
+})
